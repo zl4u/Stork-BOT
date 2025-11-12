@@ -1,55 +1,42 @@
 import os
-import subprocess
 import requests
+import json
 
-# 1️⃣ 获取当前 PR diff
-diff = subprocess.getoutput("git fetch origin main && git diff origin/main...HEAD --unified=0")
+# ✅ 模型名称：可以是 gpt-4o-mini 或 gpt-4o
+MODEL_NAME = "gpt-4o-mini"
 
-if not diff.strip():
-    print("No code changes detected.")
-    exit(0)
-
-# 2️⃣ 构建审查提示词
-prompt = f"""
-You are a senior backend engineer doing a code review.
-Please review the following git diff and provide concise feedback:
-- Identify potential bugs or risky logic
-- Suggest performance or readability improvements
-- Keep comments short and clear
-
-Diff:
-{diff[:6000]}  # 防止太长
+# ✅ 传入要审查的代码
+code_diff = """
+def add(a, b):
+    return a + b
 """
 
-# 3️⃣ 调用 GitHub Models API
+print("🔍 Calling GitHub Models API...")
+
+url = f"https://api.github.com/models/{MODEL_NAME}/responses"
+
 headers = {
     "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
-    "Accept": "application/vnd.github+json",
+    "Content-Type": "application/json",
 }
+
 payload = {
-    "model": "gpt-4o-mini",
-    "messages": [
-        {"role": "system", "content": "You are an expert code reviewer."},
-        {"role": "user", "content": prompt}
+    "input": [
+        {
+            "role": "user",
+            "content": f"请帮我做代码review：\n{code_diff}"
+        }
     ]
 }
 
-print("🔍 Calling GitHub Models API...")
-response = requests.post("https://api.github.com/models/gpt-4o-mini/completions", headers=headers, json=payload)
+response = requests.post(url, headers=headers, json=payload)
 data = response.json()
-print("Response data:", data)
-review_text = data["choices"][0]["message"]["content"]
-print("✅ Review result:\n", review_text)
+print("Response data:", json.dumps(data, indent=2, ensure_ascii=False))
 
-# 4️⃣ 自动评论回 PR
-# 获取 PR 号（通过环境变量 GITHUB_REF）
-pr_number = os.getenv("GITHUB_REF").split("/")[-1]
-repo = os.getenv("GITHUB_REPOSITORY")
-
-comment_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-
-requests.post(
-    comment_url,
-    headers=headers,
-    json={"body": f"🤖 **AI Code Review Result (via GitHub Models)**:\n\n{review_text}"}
-)
+# ✅ 解析结果
+if "output" in data and len(data["output"]) > 0:
+    review_text = data["output"][0]["content"][0]["text"]
+    print("\n✅ AI Review Result:\n", review_text)
+else:
+    print("⚠️ Unexpected API response format.")
+    exit(1)
