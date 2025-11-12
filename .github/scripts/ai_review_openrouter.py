@@ -30,7 +30,7 @@ print(f"✅ Diff fetched, {len(code_diff)} characters")
 # ==============================
 MODEL = "kwaipilot/kat-coder-pro:free"  # 可改为 claude-3.5-sonnet, gemini-2-pro 等
 AI_URL = "https://openrouter.ai/api/v1/chat/completions"
-
+print("🔑 OPENROUTER_API_KEY exists:", bool(os.getenv("OPENROUTER_API_KEY")))
 ai_headers = {
     "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
     "HTTP-Referer": "https://github.com",  # 按 OpenRouter 要求添加
