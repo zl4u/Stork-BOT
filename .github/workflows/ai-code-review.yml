@@ -1,0 +1,22 @@
+name: AI Code Review (GitHub Models)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read        # 允许读仓库
+      pull-requests: write  # 允许评论 PR
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run AI Review via GitHub Models
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 系统自带，无需手动配置
+        run: |
+          python .github/scripts/ai_review_github_model.py
