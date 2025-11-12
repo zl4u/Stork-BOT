@@ -37,7 +37,7 @@ payload = {
 print("🔍 Calling GitHub Models API...")
 response = requests.post("https://api.github.com/models/gpt-4o-mini/completions", headers=headers, json=payload)
 data = response.json()
-
+print("Response data:", data)
 review_text = data["choices"][0]["message"]["content"]
 print("✅ Review result:\n", review_text)
 
